@@ -16,7 +16,7 @@ The `source` settings involve configuration to the WinGet source.
     "source": {
         "autoUpdateIntervalInMinutes": 3
     },
-``` 
+```
 
 ### autoUpdateIntervalInMinutes
 
@@ -33,7 +33,7 @@ The `visual` settings involve visual elements that are displayed by WinGet
 
 ### progressBar
 
-Color of the progress bar that WinGet displays when not specified by arguments. 
+Color of the progress bar that WinGet displays when not specified by arguments.
 
 - accent (default)
 - retro
@@ -60,6 +60,7 @@ Replaces some known folder paths with their respective environment variable. Def
 The `installBehavior` settings affect the default behavior of installing and upgrading (where applicable) packages.
 
 ### Disable Install Notes
+
 The `disableInstallNotes` behavior affects whether installation notes are shown after a successful install. Defaults to `false` if value is not set or is invalid.
 
 ```json
@@ -69,6 +70,7 @@ The `disableInstallNotes` behavior affects whether installation notes are shown 
 ```
 
 ### Portable Package User Root
+
 The `portablePackageUserRoot` setting affects the default root directory where packages are installed to under `User` scope. This setting only applies to packages with the `portable` installer type. Defaults to `%LOCALAPPDATA%/Microsoft/WinGet/Packages/` if value is not set or is invalid.
 
 > Note: This setting value must be an absolute path.
@@ -80,6 +82,7 @@ The `portablePackageUserRoot` setting affects the default root directory where p
 ```
 
 ### Portable Package Machine Root
+
 The `portablePackageMachineRoot` setting affects the default root directory where packages are installed to under `Machine` scope. This setting only applies to packages with the `portable` installer type. Defaults to `%PROGRAMFILES%/WinGet/Packages/` if value is not set or is invalid.
 
 > Note: This setting value must be an absolute path.
@@ -91,6 +94,7 @@ The `portablePackageMachineRoot` setting affects the default root directory wher
 ```
 
 ### Skip Dependencies
+
 The 'skipDependencies' behavior affects whether dependencies are installed for a given package. Defaults to 'false' if value is not set or is invalid.
 
 ```json
@@ -128,6 +132,7 @@ The `locale` behavior affects the choice of installer based on installer locale.
         }
     },
 ```
+
 ### Architectures
 
 The `architectures` behavior affects what architectures will be selected when installing a package. The matching parameter is `--architecture`. Note that only architectures compatible with your system can be selected.
@@ -203,7 +208,7 @@ The `downloader` setting controls which code is used when downloading packages. 
 `wininet` uses the [WinINet](https://docs.microsoft.com/windows/win32/wininet/about-wininet) APIs, while `do` uses the
 [Delivery Optimization](https://support.microsoft.com/windows/delivery-optimization-in-windows-10-0656e53c-15f2-90de-a87a-a2172c94cf6d) service.
 
-The `doProgressTimeoutInSeconds` setting updates the number of seconds to wait without progress before fallback. The default number of seconds is 60, minimum is 1 and the maximum is 600. 
+The `doProgressTimeoutInSeconds` setting updates the number of seconds to wait without progress before fallback. The default number of seconds is 60, minimum is 1 and the maximum is 600.
 
 ```json
    "network": {
@@ -228,7 +233,7 @@ If set to true, the `interactivity.disable` setting will prevent any interactive
 
 ## Experimental Features
 
-To allow work to be done and distributed to early adopters for feedback, settings can be used to enable "experimental" features. 
+To allow work to be done and distributed to early adopters for feedback, settings can be used to enable "experimental" features.
 
 The `experimentalFeatures` settings involve the configuration of these "experimental" features. Individual features can be enabled under this node. The example below shows sample experimental features.
 
@@ -241,8 +246,8 @@ The `experimentalFeatures` settings involve the configuration of these "experime
 
 ### directMSI
 
-This feature enables the Windows Package Manager to directly install MSI packages with the MSI APIs rather than through msiexec. 
-Note that when silent installation is used this is already in affect, as MSI packages that require elevation will fail in that scenario without it. 
+This feature enables the Windows Package Manager to directly install MSI packages with the MSI APIs rather than through msiexec.
+Note that when silent installation is used this is already in affect, as MSI packages that require elevation will fail in that scenario without it.
 You can enable the feature as shown below.
 
 ```json

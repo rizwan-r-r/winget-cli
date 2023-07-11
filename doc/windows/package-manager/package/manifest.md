@@ -23,6 +23,7 @@ winget install wingetcreate
 After installation, you can run `wingetcreate new` to create a new package and fill in the prompts. The last option **WinGetCreate** will offer is for you to submit the manifest to the packages repository. If you choose yes, you will automatically submit your Pull Request (PR) to the [Windows Package Manager Community Repository](https://github.com/microsoft/winget-pkgs).
 
 ### Using the YAMLCreate.ps1
+
 To help author manifest files, we have provided a YAMLCreate.ps1 powershell script located in the Tools folder on the [Windows Package Manager Community Repository](https://github.com/microsoft/winget-pkgs). You can use the script by cloning the [Windows Package Manager Community Repository](https://github.com/microsoft/winget-pkgs) on your PC and run the script directly from the **Tools** folder. The script will prompt you for the URL to the installer, then will prompt you to fill in metadata. Like **WinGetCreate**, this script will also offer you to submit your manifest automatically.
 
 ## YAML basics
@@ -57,7 +58,6 @@ only a number of fields are required.  The minimal supported YAML file would loo
 a single installer and a single locale. If more than one installer or locale is provided, the multiple YAML file format and schema must be used.
 
 The partitioning scheme was added to help with GitHub's UX. Folders with thousands of children do not render well in the browser.
-
 
 ```YAML
 PackageIdentifier:  # Publisher.package format.
@@ -99,9 +99,11 @@ ManifestVersion: 1.4.0
 ```
 
 #### Multiple File Example
+
 In order to provide the best user experience, manifests should contain as much meta-data as possible. In order to separate concerns for validating installers
 and providing localized meta-data manifests will be split into multiple files. The minimum number of YAML files for this kind of manifest is three. Additional
-locales should also be provided. 
+locales should also be provided.
+
 * A [version](https://github.com/microsoft/winget-cli/blob/master/schemas/JSON/manifests/v1.4.0/manifest.version.1.4.0.json) file
 * The [default locale](https://github.com/microsoft/winget-cli/blob/master/schemas/JSON/manifests/v1.4.0/manifest.defaultLocale.1.4.0.json) file
 * An [installer](https://github.com/microsoft/winget-cli/blob/master/schemas/JSON/manifests/v1.4.0/manifest.installer.1.4.0.json) file
