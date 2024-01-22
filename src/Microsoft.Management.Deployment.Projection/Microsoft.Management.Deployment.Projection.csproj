@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="1.6.5" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.0.4" />
   </ItemGroup>
 
   <!-- CsWinRT properties -->
@@ -26,5 +26,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\PowerShell\Microsoft.WinGet.SharedLib\Microsoft.WinGet.SharedLib.csproj" />
   </ItemGroup>
 </Project>

@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Management::Configuration::implementation
             m_progress(std::move(progress))
     {
         // Create a copy of the set of configuration units
-        auto unitsView = configurationSet.ConfigurationUnits();
+        auto unitsView = configurationSet.Units();
         std::vector<ConfigurationUnit> unitsToProcess{ unitsView.Size() };
         unitsView.GetMany(0, unitsToProcess);
 
@@ -46,11 +46,11 @@ namespace winrt::Microsoft::Management::Configuration::implementation
         m_progress.Result(*m_result);
     }
 
-    void ConfigurationSetApplyProcessor::Process()
+    void ConfigurationSetApplyProcessor::Process(bool preProcessOnly)
     {
         try
         {
-            if (PreProcess())
+            if (PreProcess() && !preProcessOnly)
             {
                 // TODO: Send pending when blocked by another configuration run
                 //SendProgress(ConfigurationSetState::Pending);
@@ -62,20 +62,27 @@ namespace winrt::Microsoft::Management::Configuration::implementation
 
             SendProgress(ConfigurationSetState::Completed);
 
-            m_telemetry.LogConfigProcessingSummaryForApply(*winrt::get_self<implementation::ConfigurationSet>(m_configurationSet), *m_result);
+            if (!preProcessOnly)
+            {
+                m_telemetry.LogConfigProcessingSummaryForApply(*winrt::get_self<implementation::ConfigurationSet>(m_configurationSet), *m_result);
+            }
         }
         catch (...)
         {
-            const auto& configurationSet = *winrt::get_self<implementation::ConfigurationSet>(m_configurationSet);
-            m_telemetry.LogConfigProcessingSummary(
-                configurationSet.InstanceIdentifier(),
-                configurationSet.IsFromHistory(),
-                ConfigurationUnitIntent::Apply,
-                LOG_CAUGHT_EXCEPTION(),
-                ConfigurationUnitResultSource::Internal,
-                GetProcessingSummaryFor(ConfigurationUnitIntent::Assert),
-                GetProcessingSummaryFor(ConfigurationUnitIntent::Inform),
-                GetProcessingSummaryFor(ConfigurationUnitIntent::Apply));
+            if (!preProcessOnly)
+            {
+                const auto& configurationSet = *winrt::get_self<implementation::ConfigurationSet>(m_configurationSet);
+                m_telemetry.LogConfigProcessingSummary(
+                    configurationSet.InstanceIdentifier(),
+                    configurationSet.IsFromHistory(),
+                    ConfigurationUnitIntent::Apply,
+                    LOG_CAUGHT_EXCEPTION(),
+                    ConfigurationUnitResultSource::Internal,
+                    GetProcessingSummaryFor(ConfigurationUnitIntent::Assert),
+                    GetProcessingSummaryFor(ConfigurationUnitIntent::Inform),
+                    GetProcessingSummaryFor(ConfigurationUnitIntent::Apply));
+            }
+
             throw;
         }
     }
@@ -359,7 +366,7 @@ namespace winrt::Microsoft::Management::Configuration::implementation
         // Once we get this far, consider the unit processed even if we fail to create the actual processor.
         unitInfo.Processed = true;
 
-        if (!unitInfo.Unit.ShouldApply())
+        if (!unitInfo.Unit.IsActive())
         {
             // If the unit is requested to be skipped, we mark it with a failure to prevent any dependency from running.
             // But we return true from this function to indicate a successful "processing".
@@ -374,7 +381,7 @@ namespace winrt::Microsoft::Management::Configuration::implementation
 
         try
         {
-            unitProcessor = m_setProcessor.CreateUnitProcessor(unitInfo.Unit, {});
+            unitProcessor = m_setProcessor.CreateUnitProcessor(unitInfo.Unit);
         }
         catch (...)
         {

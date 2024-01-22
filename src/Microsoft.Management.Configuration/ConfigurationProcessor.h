@@ -24,6 +24,7 @@ namespace winrt::Microsoft::Management::Configuration::implementation
         using TestConfigurationSetResult = Configuration::TestConfigurationSetResult;
         using TestConfigurationUnitResult = Configuration::TestConfigurationUnitResult;
         using GetConfigurationUnitSettingsResult = Configuration::GetConfigurationUnitSettingsResult;
+        using GetAllConfigurationUnitSettingsResult = Configuration::GetAllConfigurationUnitSettingsResult;
         using GetConfigurationSetDetailsResult = Configuration::GetConfigurationSetDetailsResult;
         using GetConfigurationUnitDetailsResult = Configuration::GetConfigurationUnitDetailsResult;
 
@@ -64,11 +65,11 @@ namespace winrt::Microsoft::Management::Configuration::implementation
             const Windows::Foundation::Collections::IVectorView<ConfigurationSet>& configurationSets,
             bool includeConfigurationHistory);
 
-        GetConfigurationSetDetailsResult GetSetDetails(const ConfigurationSet& configurationSet, ConfigurationUnitDetailLevel detailLevel);
-        Windows::Foundation::IAsyncOperationWithProgress<GetConfigurationSetDetailsResult, GetConfigurationUnitDetailsResult> GetSetDetailsAsync(const ConfigurationSet& configurationSet, ConfigurationUnitDetailLevel detailLevel);
+        GetConfigurationSetDetailsResult GetSetDetails(const ConfigurationSet& configurationSet, ConfigurationUnitDetailFlags detailFlags);
+        Windows::Foundation::IAsyncOperationWithProgress<GetConfigurationSetDetailsResult, GetConfigurationUnitDetailsResult> GetSetDetailsAsync(const ConfigurationSet& configurationSet, ConfigurationUnitDetailFlags detailFlags);
 
-        void GetUnitDetails(const ConfigurationUnit& unit, ConfigurationUnitDetailLevel detailLevel);
-        Windows::Foundation::IAsyncAction GetUnitDetailsAsync(const ConfigurationUnit& unit, ConfigurationUnitDetailLevel detailLevel);
+        GetConfigurationUnitDetailsResult GetUnitDetails(const ConfigurationUnit& unit, ConfigurationUnitDetailFlags detailFlags);
+        Windows::Foundation::IAsyncOperation<GetConfigurationUnitDetailsResult> GetUnitDetailsAsync(const ConfigurationUnit& unit, ConfigurationUnitDetailFlags detailFlags);
 
         ApplyConfigurationSetResult ApplySet(const ConfigurationSet& configurationSet, ApplyConfigurationSetFlags flags);
         Windows::Foundation::IAsyncOperationWithProgress<ApplyConfigurationSetResult, ConfigurationSetChangeData> ApplySetAsync(const ConfigurationSet& configurationSet, ApplyConfigurationSetFlags flags);
@@ -78,6 +79,9 @@ namespace winrt::Microsoft::Management::Configuration::implementation
 
         GetConfigurationUnitSettingsResult GetUnitSettings(const ConfigurationUnit& unit);
         Windows::Foundation::IAsyncOperation<GetConfigurationUnitSettingsResult> GetUnitSettingsAsync(const ConfigurationUnit& unit);
+
+        GetAllConfigurationUnitSettingsResult GetAllUnitSettings(const ConfigurationUnit& unit);
+        Windows::Foundation::IAsyncOperation<GetAllConfigurationUnitSettingsResult> GetAllUnitSettingsAsync(const ConfigurationUnit& unit);
 
         HRESULT STDMETHODCALLTYPE SetLifetimeWatcher(IUnknown* watcher);
 
@@ -90,13 +94,16 @@ namespace winrt::Microsoft::Management::Configuration::implementation
         // Sends diagnostics objects to the event.
         void SendDiagnostics(const IDiagnosticInformation& information);
 
+        // Temporary entry point to enable experimental schema support.
+        void SetSupportsSchema03(bool value);
+
     private:
         GetConfigurationSetDetailsResult GetSetDetailsImpl(
             const ConfigurationSet& configurationSet,
-            ConfigurationUnitDetailLevel detailLevel,
+            ConfigurationUnitDetailFlags detailFlags,
             AppInstaller::WinRT::AsyncProgress<GetConfigurationSetDetailsResult, GetConfigurationUnitDetailsResult> progress = {});
 
-        void GetUnitDetailsImpl(const ConfigurationUnit& unit, ConfigurationUnitDetailLevel detailLevel);
+        GetConfigurationUnitDetailsResult GetUnitDetailsImpl(const ConfigurationUnit& unit, ConfigurationUnitDetailFlags detailFlags);
 
         ApplyConfigurationSetResult ApplySetImpl(
             const ConfigurationSet& configurationSet,
@@ -109,6 +116,8 @@ namespace winrt::Microsoft::Management::Configuration::implementation
 
         GetConfigurationUnitSettingsResult GetUnitSettingsImpl(const ConfigurationUnit& unit, AppInstaller::WinRT::AsyncCancellation cancellation = {});
 
+        GetAllConfigurationUnitSettingsResult GetAllUnitSettingsImpl(const ConfigurationUnit& unit, AppInstaller::WinRT::AsyncCancellation cancellation = {});
+
         void SendDiagnosticsImpl(const IDiagnosticInformation& information);
 
         IConfigurationSetProcessorFactory m_factory = nullptr;
@@ -119,6 +128,8 @@ namespace winrt::Microsoft::Management::Configuration::implementation
         DiagnosticLevel m_minimumLevel = DiagnosticLevel::Informational;
         std::recursive_mutex m_diagnosticsMutex;
         bool m_isHandlingDiagnostics = false;
+        // Temporary value to enable experimental schema support.
+        bool m_supportSchema03 = true;
 #endif
     };
 }

@@ -13,8 +13,10 @@ namespace Microsoft.WinGet.Client.Engine.Commands
     using System.Linq;
     using System.Management.Automation;
     using Microsoft.WinGet.Client.Engine.Commands.Common;
+    using Microsoft.WinGet.Client.Engine.Common;
     using Microsoft.WinGet.Client.Engine.Exceptions;
     using Microsoft.WinGet.Client.Engine.Helpers;
+    using Microsoft.WinGet.Common.Command;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
@@ -26,17 +28,7 @@ namespace Microsoft.WinGet.Client.Engine.Commands
         private const string SchemaKey = "$schema";
         private const string SchemaValue = "https://aka.ms/winget-settings.schema.json";
 
-        private static readonly string WinGetSettingsFilePath;
-
-        static UserSettingsCommand()
-        {
-            var wingetCliWrapper = new WingetCLIWrapper();
-            var settingsResult = wingetCliWrapper.RunCommand("settings", "export");
-
-            // Read the user settings file property.
-            var serialized = JObject.Parse(settingsResult.StdOut);
-            WinGetSettingsFilePath = (string)serialized.GetValue("userSettingsFile");
-        }
+        private static string? winGetSettingsFilePath;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserSettingsCommand"/> class.
@@ -45,6 +37,18 @@ namespace Microsoft.WinGet.Client.Engine.Commands
         public UserSettingsCommand(PSCmdlet psCmdlet)
             : base(psCmdlet)
         {
+            // Doing it in the static constructor will show the user running in system context:
+            // The type initializer for 'Microsoft.WinGet.Client.Engine.Commands.UserSettingsCommand' threw an exception.
+            // Here would be "The specified method is not supported."
+            if (winGetSettingsFilePath == null)
+            {
+                var wingetCliWrapper = new WingetCLIWrapper();
+                var settingsResult = wingetCliWrapper.RunCommand("settings", "export");
+
+                // Read the user settings file property.
+                var userSettingsFile = Utilities.ConvertToHashtable(settingsResult.StdOut)["userSettingsFile"] ?? throw new ArgumentNullException("userSettingsFile");
+                winGetSettingsFilePath = (string)userSettingsFile;
+            }
         }
 
         /// <summary>
@@ -52,7 +56,7 @@ namespace Microsoft.WinGet.Client.Engine.Commands
         /// </summary>
         public void Get()
         {
-            this.PsCmdlet.WriteObject(this.GetLocalSettingsAsHashtable());
+            this.Write(StreamType.Object, this.GetLocalSettingsAsHashtable());
         }
 
         /// <summary>
@@ -62,7 +66,7 @@ namespace Microsoft.WinGet.Client.Engine.Commands
         /// <param name="ignoreNotSet">Ignore comparing settings that are not part of the input.</param>
         public void Test(Hashtable userSettings, bool ignoreNotSet)
         {
-            this.PsCmdlet.WriteObject(this.CompareUserSettings(userSettings, ignoreNotSet));
+            this.Write(StreamType.Object, this.CompareUserSettings(userSettings, ignoreNotSet));
         }
 
         /// <summary>
@@ -100,10 +104,10 @@ namespace Microsoft.WinGet.Client.Engine.Commands
             // Write settings.
             var settingsJson = orderedSettings.ToString(Formatting.Indented);
             File.WriteAllText(
-                WinGetSettingsFilePath,
+                winGetSettingsFilePath!,
                 settingsJson);
 
-            this.PsCmdlet.WriteObject(this.ConvertToHashtable(settingsJson));
+            this.Write(StreamType.Object, Utilities.ConvertToHashtable(settingsJson));
         }
 
         private static JObject HashtableToJObject(Hashtable hashtable)
@@ -113,131 +117,26 @@ namespace Microsoft.WinGet.Client.Engine.Commands
 
         private Hashtable GetLocalSettingsAsHashtable()
         {
-            var content = File.Exists(WinGetSettingsFilePath) ?
-                File.ReadAllText(WinGetSettingsFilePath) :
+            var content = File.Exists(winGetSettingsFilePath) ?
+                File.ReadAllText(winGetSettingsFilePath) :
                 string.Empty;
 
-            return this.ConvertToHashtable(content);
+            return Utilities.ConvertToHashtable(content);
         }
 
         private JObject LocalSettingsFileToJObject()
         {
             try
             {
-                return File.Exists(WinGetSettingsFilePath) ?
-                    JObject.Parse(File.ReadAllText(WinGetSettingsFilePath)) :
+                return File.Exists(winGetSettingsFilePath) ?
+                    JObject.Parse(File.ReadAllText(winGetSettingsFilePath)) :
                     new JObject();
             }
             catch (JsonReaderException e)
             {
-                this.PsCmdlet.WriteDebug(e.Message);
+                this.Write(StreamType.Verbose, e.Message);
                 throw new UserSettingsReadException(e);
             }
-        }
-
-        private Hashtable ConvertToHashtable(string content)
-        {
-            if (string.IsNullOrEmpty(content))
-            {
-                return new Hashtable();
-            }
-
-            // This is based of https://github.com/PowerShell/PowerShell/blob/master/src/Microsoft.PowerShell.Commands.Utility/commands/utility/WebCmdlet/JsonObject.cs.
-            // So we can convert JSON to Hashtable for Windows PowerShell and PowerShell Core.
-            try
-            {
-                var obj = JsonConvert.DeserializeObject(
-                    content,
-                    new JsonSerializerSettings
-                    {
-                        // This TypeNameHandling setting is required to be secure.
-                        TypeNameHandling = TypeNameHandling.None,
-                        MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
-                        MaxDepth = 1024,
-                    });
-
-                // It only makes sense that the deserialized object is a dictionary to start.
-                return obj switch
-                {
-                    JObject dictionary => this.PopulateHashTableFromJDictionary(dictionary),
-                    _ => throw new UserSettingsReadException()
-                };
-            }
-            catch (Exception e)
-            {
-                throw new UserSettingsReadException(e);
-            }
-        }
-
-        private Hashtable PopulateHashTableFromJDictionary(JObject entries)
-        {
-            Hashtable result = new (entries.Count);
-            foreach (var entry in entries)
-            {
-                switch (entry.Value)
-                {
-                    case JArray list:
-                        {
-                            // Array
-                            var listResult = this.PopulateHashTableFromJArray(list);
-                            result.Add(entry.Key, listResult);
-                            break;
-                        }
-
-                    case JObject dic:
-                        {
-                            // Dictionary
-                            var dicResult = this.PopulateHashTableFromJDictionary(dic);
-                            result.Add(entry.Key, dicResult);
-                            break;
-                        }
-
-                    case JValue value:
-                        {
-                            result.Add(entry.Key, value.Value);
-                            break;
-                        }
-                }
-            }
-
-            return result;
-        }
-
-        private ICollection<object> PopulateHashTableFromJArray(JArray list)
-        {
-            var result = new object[list.Count];
-
-            for (var index = 0; index < list.Count; index++)
-            {
-                var element = list[index];
-
-                switch (element)
-                {
-                    case JArray array:
-                        {
-                            // Array
-                            var listResult = this.PopulateHashTableFromJArray(array);
-                            result[index] = listResult;
-                            break;
-                        }
-
-                    case JObject dic:
-                        {
-                            // Dictionary
-                            var dicResult = this.PopulateHashTableFromJDictionary(dic);
-                            result[index] = dicResult;
-                            break;
-                        }
-
-                    case JValue value:
-                        {
-                            result[index] = value.Value;
-                            break;
-                        }
-                }
-            }
-
-            return result;
         }
 
         private bool CompareUserSettings(Hashtable userSettings, bool ignoreNotSet)
@@ -267,7 +166,7 @@ namespace Microsoft.WinGet.Client.Engine.Commands
             }
             catch (Exception e)
             {
-                this.PsCmdlet.WriteDebug(e.Message);
+                this.Write(StreamType.Verbose, e.Message);
                 return false;
             }
         }
@@ -280,27 +179,34 @@ namespace Microsoft.WinGet.Client.Engine.Commands
         /// <param name="json">Main json.</param>
         /// <param name="otherJson">otherJson.</param>
         /// <returns>True is otherJson partially contains json.</returns>
-        private bool PartialDeepEquals(JToken json, JToken otherJson)
+        private bool PartialDeepEquals(JToken json, JToken? otherJson)
         {
             if (JToken.DeepEquals(json, otherJson))
             {
                 return true;
             }
 
+            if (otherJson == null)
+            {
+                return false;
+            }
+
             // If they are a JValue (string, integer, date, etc) or they are a JArray and DeepEquals fails then not equal.
             if ((json is JValue && otherJson is JValue) ||
                 (json is JArray && otherJson is JArray))
             {
-                this.PsCmdlet.WriteDebug($"'{json.ToString(Newtonsoft.Json.Formatting.None)}' != " +
-                    $"'{otherJson.ToString(Newtonsoft.Json.Formatting.None)}'");
+                this.Write(
+                    StreamType.Verbose,
+                    $"'{json.ToString(Formatting.None)}' != '{otherJson.ToString(Formatting.None)}'");
                 return false;
             }
 
             // If its not the same type then don't bother.
             if (json.Type != otherJson.Type)
             {
-                this.PsCmdlet.WriteDebug($"Mismatch types '{json.ToString(Newtonsoft.Json.Formatting.None)}' " +
-                    $"'{otherJson.ToString(Newtonsoft.Json.Formatting.None)}'");
+                this.Write(
+                    StreamType.Verbose,
+                    $"Mismatch types '{json.ToString(Formatting.None)}' '{otherJson.ToString(Formatting.None)}'");
                 return false;
             }
 
@@ -316,7 +222,7 @@ namespace Microsoft.WinGet.Client.Engine.Commands
                     // If the property is not there then give up.
                     if (!otherJObject.ContainsKey(property.Name))
                     {
-                        this.PsCmdlet.WriteDebug($"{property.Name} not found.");
+                        this.Write(StreamType.Verbose, $"{property.Name} not found.");
                         return false;
                     }
 

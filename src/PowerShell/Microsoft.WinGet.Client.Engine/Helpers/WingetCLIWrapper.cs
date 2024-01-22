@@ -6,6 +6,7 @@
 
 namespace Microsoft.WinGet.Client.Engine.Helpers
 {
+    using System;
     using System.Diagnostics;
     using System.IO;
     using Microsoft.WinGet.Client.Engine.Common;
@@ -32,6 +33,11 @@ namespace Microsoft.WinGet.Client.Engine.Helpers
         /// <param name="fullPath">Use full path or not.</param>
         public WingetCLIWrapper(bool fullPath = true)
         {
+            if (Utilities.ExecutingAsSystem)
+            {
+                throw new NotSupportedException();
+            }
+
             if (fullPath)
             {
                 this.wingetPath = WinGetFullPath;
@@ -63,7 +69,7 @@ namespace Microsoft.WinGet.Client.Engine.Helpers
         /// <param name="parameters">Parameters.</param>
         /// <param name="timeOut">Time out.</param>
         /// <returns>WinGetCommandResult.</returns>
-        public WinGetCLICommandResult RunCommand(string command, string parameters = null, int timeOut = 60000)
+        public WinGetCLICommandResult RunCommand(string command, string? parameters = null, int timeOut = 60000)
         {
             string args = command;
             if (!string.IsNullOrEmpty(parameters))

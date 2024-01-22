@@ -11,31 +11,36 @@ namespace AppInstallerCLIE2ETests
     using System.Threading;
     using System.Threading.Tasks;
     using System.Xml;
+    using AppInstallerCLIE2ETests.Helpers;
     using NUnit.Framework;
 
     /// <summary>
     /// `test appshutdown` command tests.
     /// </summary>
-    public class AppShutdownTests : BaseCommand
+    public class AppShutdownTests
     {
         /// <summary>
         /// Runs winget test appshutdown and register the application to force a WM_QUERYENDSESSION message.
         /// </summary>
         [Test]
-        [Ignore("This test won't work on Window Server")]
         public void RegisterApplicationTest()
         {
-            if (!TestCommon.PackagedContext)
+            if (!TestSetup.Parameters.PackagedContext)
             {
-                return;
+                Assert.Ignore("Not packaged context.");
             }
 
-            if (string.IsNullOrEmpty(TestCommon.AICLIPackagePath))
+            if (!TestCommon.ExecutingAsAdministrator && TestCommon.IsCIEnvironment)
+            {
+                Assert.Ignore("This test won't work on Window Server as non-admin");
+            }
+
+            if (string.IsNullOrEmpty(TestSetup.Parameters.AICLIPackagePath))
             {
                 throw new NullReferenceException("AICLIPackagePath");
             }
 
-            var appxManifest = Path.Combine(TestCommon.AICLIPackagePath, "AppxManifest.xml");
+            var appxManifest = Path.Combine(TestSetup.Parameters.AICLIPackagePath, "AppxManifest.xml");
             if (!File.Exists(appxManifest))
             {
                 throw new FileNotFoundException(appxManifest);
@@ -67,13 +72,13 @@ namespace AppInstallerCLIE2ETests
             // This just waits for the app termination event.
             var testCmdTask = new Task<TestCommon.RunCommandResult>(() =>
             {
-                return TestCommon.RunAICLICommandViaInvokeCommandInDesktopPackage("test", "appshutdown", timeOut: 300000, throwOnTimeout: false);
+                return TestCommon.RunAICLICommand("test", "appshutdown", timeOut: 300000, throwOnTimeout: false);
             });
 
             // Register the app with the updated version.
             var registerTask = new Task<bool>(() =>
             {
-                return TestCommon.InstallMsixRegister(TestCommon.AICLIPackagePath, true, false);
+                return TestCommon.InstallMsixRegister(TestSetup.Parameters.AICLIPackagePath, true, false);
             });
 
             // Give it a little time.
@@ -89,27 +94,6 @@ namespace AppInstallerCLIE2ETests
             // The ctrl-c command terminates the batch file before the exit code file gets created.
             // Look for the output.
             Assert.True(testCmdTask.Result.StdOut.Contains("Succeeded waiting for app shutdown event"));
-        }
-
-        /// <summary>
-        /// Runs winget test appshutdown --force.
-        /// </summary>
-        [Test]
-        public void RegisterApplicationTest_Force()
-        {
-            if (!TestCommon.PackagedContext)
-            {
-                return;
-            }
-
-            if (string.IsNullOrEmpty(TestCommon.AICLIPackagePath))
-            {
-                throw new NullReferenceException("AICLIPackagePath");
-            }
-
-            var result = TestCommon.RunAICLICommandViaInvokeCommandInDesktopPackage("test", "appshutdown --force", timeOut: 300000, throwOnTimeout: false);
-            TestContext.Out.Write(result.StdOut);
-            Assert.True(result.StdOut.Contains("Succeeded waiting for app shutdown event"));
         }
     }
 }

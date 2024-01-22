@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WinGet.Client.Engine.Properties {
+namespace Microsoft.WinGet.Resources {
     using System;
     
     
@@ -66,6 +66,33 @@ namespace Microsoft.WinGet.Client.Engine.Properties {
         internal static string CatalogConnectExceptionMessage {
             get {
                 return ResourceManager.GetString("CatalogConnectExceptionMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Completed.
+        /// </summary>
+        internal static string Completed {
+            get {
+                return ResourceManager.GetString("Completed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Debug parameter not supported.
+        /// </summary>
+        internal static string DebugNotSupported {
+            get {
+                return ResourceManager.GetString("DebugNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Downloading.
+        /// </summary>
+        internal static string DownloadingMessage {
+            get {
+                return ResourceManager.GetString("DownloadingMessage", resourceCulture);
             }
         }
         
@@ -232,6 +259,15 @@ namespace Microsoft.WinGet.Client.Engine.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cannot find asset {0}.
+        /// </summary>
+        internal static string ReleaseAssetNotFound {
+            get {
+                return ResourceManager.GetString("ReleaseAssetNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Try running with -AllUsers in administrator mode..
         /// </summary>
         internal static string RepairAllUsersHelpMessage {
@@ -268,11 +304,29 @@ namespace Microsoft.WinGet.Client.Engine.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This cmdlet requires administrator privileges to execute..
+        /// </summary>
+        internal static string RequiresAdminMessage {
+            get {
+                return ResourceManager.GetString("RequiresAdminMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Single threaded apartment (STA) is not currently supported in this context; run PowerShell in Multi-threaded apartment mode (MTA)..
         /// </summary>
         internal static string SingleThreadedApartmentNotSupportedMessage {
             get {
                 return ResourceManager.GetString("SingleThreadedApartmentNotSupportedMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uninstalling.
+        /// </summary>
+        internal static string Uninstalling {
+            get {
+                return ResourceManager.GetString("Uninstalling", resourceCulture);
             }
         }
         
@@ -304,7 +358,7 @@ namespace Microsoft.WinGet.Client.Engine.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Command {0} failed with exit code {1}.
+        ///   Looks up a localized string similar to Winget command &apos;{0}&apos; with parameters &apos;{1}&apos; failed with exit code &apos;{2}&apos;..
         /// </summary>
         internal static string WinGetCLIExceptionMessage {
             get {
@@ -313,7 +367,7 @@ namespace Microsoft.WinGet.Client.Engine.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Winget command run timed out: {0} {1}.
+        ///   Looks up a localized string similar to Winget command timed out: {0} {1}.
         /// </summary>
         internal static string WinGetCLITimeoutExceptionMessage {
             get {
